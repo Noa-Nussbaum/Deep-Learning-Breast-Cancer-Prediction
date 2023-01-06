@@ -5,16 +5,13 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.utils import shuffle
 import tensorflow.compat.v1 as tf
 from xgboost import XGBClassifier
-import xgboost as xgb
 from tensorflow import keras
-from sklearn import metrics
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 tf.disable_v2_behavior()
 import numpy as np
-import csv
 import pandas as pd
 
 
@@ -23,7 +20,7 @@ if __name__ == '__main__':
     address = r'Breast_Cancer.csv'
     df = pd.read_csv(address)
 
-    # change features with words  to numbers
+#   Change features with words  to numbers
     labelencoder = LabelEncoder()
 
     df['Race'] = labelencoder.fit_transform(df['Race'])
@@ -38,7 +35,7 @@ if __name__ == '__main__':
     df['Status'] = labelencoder.fit_transform(df['Status'])
     df['Grade'] = labelencoder.fit_transform(df['Grade'])
 
-    # Shuffle the data
+#   Shuffle the data
 
     df = shuffle(df)
 
@@ -66,29 +63,29 @@ if __name__ == '__main__':
     loss = tf.reduce_mean(logistic)
     update = tf.compat.v1.train.AdamOptimizer(0.0001).minimize(loss)
 
-    # with tf.compat.v1.Session() as sess:
-    #
-    #     sess.run(tf.global_variables_initializer())
-    #     for i in range(epochs):
-    #
-    #         sess.run(update, feed_dict={X: xtrain, Y: ytrain})
-    #
-    #         if i % 100 == 0:
-    #             print("i = ", i,"loss =", loss.eval({X: xtrain, Y: ytrain}))
-    #
-    #     print("\nOptimization Finished!\n")
-    #
-    #     # Calculate the predictions for the test data
-    #     predictions = sess.run(pred, feed_dict={X: xtest, Y: ytest})
-    #
-    #     # Convert the predictions to binary class labels
-    #     predictions_binary = (predictions > 0.5).astype(int)
-    #
-    #     # Calculate the accuracy
-    #     accuracy = (predictions_binary == ytest).mean()
-    #     print(f'Accuracy: {accuracy:.2f}')
+    with tf.compat.v1.Session() as sess:
 
-#     Let's add layers
+        sess.run(tf.global_variables_initializer())
+        for i in range(epochs):
+
+            sess.run(update, feed_dict={X: xtrain, Y: ytrain})
+
+            if i % 100 == 0:
+                print("i = ", i,"loss =", loss.eval({X: xtrain, Y: ytrain}))
+
+        print("\nOptimization Finished!\n")
+
+        # Calculate the predictions for the test data
+        predictions = sess.run(pred, feed_dict={X: xtest, Y: ytest})
+
+        # Convert the predictions to binary class labels
+        predictions_binary = (predictions > 0.5).astype(int)
+
+        # Calculate the accuracy
+        accuracy = (predictions_binary == ytest).mean()
+        print(f'Accuracy: {accuracy:.2f}')
+
+#    Let's add layers
 
     XLayers = tf.placeholder(tf.float32, [None, features])
     YLayers = tf.placeholder(tf.float32, [None, classes])
@@ -98,7 +95,6 @@ if __name__ == '__main__':
     W1 = tf.Variable(tf.truncated_normal([features, layer_1], dtype=tf.dtypes.float32, stddev=0.01))
     b1 = tf.Variable(tf.constant(0.1, dtype=tf.dtypes.float32, shape=[layer_1]))
     z1 = tf.add(tf.matmul(XLayers, W1), b1)
-    # a1 = tf.nn.leaky_relu(z1)
     a1 = tf.nn.elu(z1)
 
     # Layer 2
@@ -106,7 +102,6 @@ if __name__ == '__main__':
     W2 = tf.Variable(tf.truncated_normal([layer_1, layer_2], dtype=tf.dtypes.float32, stddev=0.01))
     b2 = tf.Variable(tf.constant(0.1, dtype=tf.dtypes.float32, shape=[layer_2]))
     z2 = tf.add(tf.matmul(XLayers, W2), b2)
-    # a1 = tf.nn.leaky_relu(z1)
     a2 = tf.nn.elu(z2)
 
     # Layer 3
@@ -114,7 +109,6 @@ if __name__ == '__main__':
     W3 = tf.Variable(tf.truncated_normal([layer_2, layer_3], dtype=tf.dtypes.float32, stddev=0.01))
     b3 = tf.Variable(tf.constant(0.1, dtype=tf.dtypes.float32, shape=[layer_3]))
     z3 = tf.add(tf.matmul(XLayers, W3), b3)
-    # a1 = tf.nn.leaky_relu(z1)
     a3 = tf.nn.elu(z3)
 
     # Layer 4
@@ -122,42 +116,40 @@ if __name__ == '__main__':
     W4 = tf.Variable(tf.truncated_normal([layer_3, layer_4], dtype=tf.dtypes.float32, stddev=0.01))
     b4 = tf.Variable(tf.constant(0.1, dtype=tf.dtypes.float32, shape=[layer_4]))
     z4 = tf.add(tf.matmul(XLayers, W4), b4)
-    # a1 = tf.nn.leaky_relu(z1)
     a4 = tf.nn.elu(z4)
 
     W5 = tf.Variable(tf.truncated_normal([layer_4, classes], dtype=tf.dtypes.float32, stddev=0.01))
     b5 = tf.Variable(tf.constant(0.1, dtype=tf.dtypes.float32, shape=[classes]))
 
-    # predLayers = tf.nn.sigmoid(tf.matmul(z3, W4) + b4)
     predLayers = tf.add(tf.matmul(z4, W5), b5)
     logisticLayers = tf.nn.sigmoid_cross_entropy_with_logits(labels=YLayers, logits=predLayers)
     lossLayers = tf.reduce_mean(logisticLayers)
     updateLayers = tf.compat.v1.train.AdamOptimizer(0.0001).minimize(lossLayers)
 
-    # with tf.compat.v1.Session() as sess:
-    #
-    #     sess.run(tf.global_variables_initializer())
-    #     for i in range(epochs):
-    #
-    #         sess.run(updateLayers, feed_dict={XLayers: xtrain, YLayers: ytrain})
-    #
-    #         if i % 100 == 0:
-    #             print("i = ", i, "loss =", lossLayers.eval({XLayers: xtrain, YLayers: ytrain}))
-    #
-    #     print("\nOptimization Finished!\n")
-    #
-    #     # Calculate the predictions for the test data
-    #     predictionsLayers = sess.run(predLayers, feed_dict={XLayers: xtest, YLayers: ytest})
-    #
-    #     # Convert the predictions to binary class labels
-    #     predictions_binary_Layers = (predictionsLayers > 0.5).astype(int)
-    #
-    #     # Calculate the accuracy
-    #     accuracyLayers = (predictions_binary_Layers == ytest).mean()
-    #     print(f'Layers accuracy: {accuracyLayers:.2f}')
+    with tf.compat.v1.Session() as sess:
+
+        sess.run(tf.global_variables_initializer())
+        for i in range(epochs):
+
+            sess.run(updateLayers, feed_dict={XLayers: xtrain, YLayers: ytrain})
+
+            if i % 100 == 0:
+                print("i = ", i, "loss =", lossLayers.eval({XLayers: xtrain, YLayers: ytrain}))
+
+        print("\nOptimization Finished!\n")
+
+        # Calculate the predictions for the test data
+        predictionsLayers = sess.run(predLayers, feed_dict={XLayers: xtest, YLayers: ytest})
+
+        # Convert the predictions to binary class labels
+        predictions_binary_Layers = (predictionsLayers > 0.5).astype(int)
+
+        # Calculate the accuracy
+        accuracyLayers = (predictions_binary_Layers == ytest).mean()
+        print(f'Layers accuracy: {accuracyLayers:.2f}')
 
 
-#         Add layers and dropout layers
+ #    Add layers and dropout layers
 
     model = keras.Sequential([
         keras.layers.Dense(features,input_dim=features, activation='relu'),
