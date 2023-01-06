@@ -1,7 +1,13 @@
+import keras
 import numpy
 import sklearn.model_selection
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.utils import shuffle
 import tensorflow.compat.v1 as tf
+from xgboost import XGBClassifier
+import xgboost as xgb
+from tensorflow import keras
+from sklearn import metrics
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from sklearn.preprocessing import LabelEncoder
@@ -13,6 +19,7 @@ import pandas as pd
 
 
 if __name__ == '__main__':
+
     address = r'Breast_Cancer.csv'
     df = pd.read_csv(address)
 
@@ -59,27 +66,27 @@ if __name__ == '__main__':
     loss = tf.reduce_mean(logistic)
     update = tf.compat.v1.train.AdamOptimizer(0.0001).minimize(loss)
 
-    with tf.compat.v1.Session() as sess:
-
-        sess.run(tf.global_variables_initializer())
-        for i in range(epochs):
-
-            sess.run(update, feed_dict={X: xtrain, Y: ytrain})
-
-            if i % 100 == 0:
-                print("i = ", i,"loss =", loss.eval({X: xtrain, Y: ytrain}))
-
-        print("\nOptimization Finished!\n")
-
-        # Calculate the predictions for the test data
-        predictions = sess.run(pred, feed_dict={X: xtest, Y: ytest})
-
-        # Convert the predictions to binary class labels
-        predictions_binary = (predictions > 0.5).astype(int)
-
-        # Calculate the accuracy
-        accuracy = (predictions_binary == ytest).mean()
-        print(f'Accuracy: {accuracy:.2f}')
+    # with tf.compat.v1.Session() as sess:
+    #
+    #     sess.run(tf.global_variables_initializer())
+    #     for i in range(epochs):
+    #
+    #         sess.run(update, feed_dict={X: xtrain, Y: ytrain})
+    #
+    #         if i % 100 == 0:
+    #             print("i = ", i,"loss =", loss.eval({X: xtrain, Y: ytrain}))
+    #
+    #     print("\nOptimization Finished!\n")
+    #
+    #     # Calculate the predictions for the test data
+    #     predictions = sess.run(pred, feed_dict={X: xtest, Y: ytest})
+    #
+    #     # Convert the predictions to binary class labels
+    #     predictions_binary = (predictions > 0.5).astype(int)
+    #
+    #     # Calculate the accuracy
+    #     accuracy = (predictions_binary == ytest).mean()
+    #     print(f'Accuracy: {accuracy:.2f}')
 
 #     Let's add layers
 
@@ -127,27 +134,63 @@ if __name__ == '__main__':
     lossLayers = tf.reduce_mean(logisticLayers)
     updateLayers = tf.compat.v1.train.AdamOptimizer(0.0001).minimize(lossLayers)
 
-    with tf.compat.v1.Session() as sess:
+    # with tf.compat.v1.Session() as sess:
+    #
+    #     sess.run(tf.global_variables_initializer())
+    #     for i in range(epochs):
+    #
+    #         sess.run(updateLayers, feed_dict={XLayers: xtrain, YLayers: ytrain})
+    #
+    #         if i % 100 == 0:
+    #             print("i = ", i, "loss =", lossLayers.eval({XLayers: xtrain, YLayers: ytrain}))
+    #
+    #     print("\nOptimization Finished!\n")
+    #
+    #     # Calculate the predictions for the test data
+    #     predictionsLayers = sess.run(predLayers, feed_dict={XLayers: xtest, YLayers: ytest})
+    #
+    #     # Convert the predictions to binary class labels
+    #     predictions_binary_Layers = (predictionsLayers > 0.5).astype(int)
+    #
+    #     # Calculate the accuracy
+    #     accuracyLayers = (predictions_binary_Layers == ytest).mean()
+    #     print(f'Layers accuracy: {accuracyLayers:.2f}')
 
-        sess.run(tf.global_variables_initializer())
-        for i in range(epochs):
 
-            sess.run(updateLayers, feed_dict={XLayers: xtrain, YLayers: ytrain})
+#         Add layers and dropout layers
 
-            if i % 100 == 0:
-                print("i = ", i, "loss =", lossLayers.eval({XLayers: xtrain, YLayers: ytrain}))
+    model = keras.Sequential([
+        keras.layers.Dense(features,input_dim=features, activation='relu'),
+        keras.layers.Dropout(0.4),
+        keras.layers.Dense(features//2, activation='relu'),
+        keras.layers.Dropout(0.3),
+        keras.layers.Dense(features//2, activation='relu'),
+        keras.layers.Dropout(0.2),
+        keras.layers.Dense(1, activation='sigmoid')
+    ])
 
-        print("\nOptimization Finished!\n")
+    model.compile(loss='binary_crossentropy', optimizer='adam',metrics=['accuracy'])
 
-        # Calculate the predictions for the test data
-        predictionsLayers = sess.run(predLayers, feed_dict={XLayers: xtest, YLayers: ytest})
+    model.fit(xtrain, ytrain,epochs=1000, batch_size=100)
 
-        # Convert the predictions to binary class labels
-        predictions_binary_Layers = (predictionsLayers > 0.5).astype(int)
+    print(model.evaluate(xtest, ytest))
 
-        # Calculate the accuracy
-        accuracyLayers = (predictions_binary_Layers == ytest).mean()
-        print(f'Layers accuracy: {accuracyLayers:.2f}')
+#     Adaboost model
+
+    adb = AdaBoostClassifier()
+    adb_model = adb.fit(xtrain, ytrain)
+    print("Adaboost accuracy", adb_model.score(xtest, ytest))
+
+#     XGBoost model
+
+    xgb = XGBClassifier()
+    xgb_model = xgb.fit(xtrain, ytrain)
+    print("XGB accuracy", xgb_model.score(xtest, ytest))
+
+
+
+
+
 
 
 
